@@ -226,7 +226,7 @@ export default function BinaryRiverCanvas() {
       <Canvas camera={{ position: [0, 0, 20], fov: 60 }} dpr={[1, 2]}>
         <RiverInstances />
         {/* Post-procesamiento Bloom para el resplandor de partículas activas */}
-        <EffectComposer disableNormalPass>
+        <EffectComposer>
           <Bloom luminanceThreshold={1} luminanceSmoothing={0.9} intensity={1.5} mipmapBlur />
         </EffectComposer>
       </Canvas>
