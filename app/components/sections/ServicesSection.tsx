@@ -1,5 +1,5 @@
 "use client";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { Bot, Database, Rocket } from "lucide-react";
 import { services } from "../../data/content";
 
@@ -10,7 +10,7 @@ export function ServicesSection() {
     <Rocket key="rocket" className="w-7 h-7 text-emerald-400" />
   ];
 
-  const container = {
+  const container: Variants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -18,7 +18,7 @@ export function ServicesSection() {
     }
   };
 
-  const item = {
+  const item: Variants = {
     hidden: { opacity: 0, scale: 0.95, y: 20 },
     show: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 60, damping: 15 } }
   };

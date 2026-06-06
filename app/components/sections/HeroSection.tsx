@@ -1,5 +1,5 @@
 "use client";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, Variants } from "framer-motion";
 import { Particles } from "../ui/Particles";
 
 export function HeroSection() {
@@ -7,7 +7,7 @@ export function HeroSection() {
   const yText = useTransform(scrollY, [0, 800], [0, 200]);
   const opacityText = useTransform(scrollY, [0, 600], [1, 0]);
 
-  const container = {
+  const container: Variants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -15,7 +15,7 @@ export function HeroSection() {
     }
   };
   
-  const item = {
+  const item: Variants = {
     hidden: { opacity: 0, y: 30 },
     show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 60, damping: 15 } }
   };
