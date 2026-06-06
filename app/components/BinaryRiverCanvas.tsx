@@ -75,7 +75,13 @@ function RiverInstances() {
   // Referencias a los elementos del DOM enlazadas una vez para evitar llamadas a getElementById en cada frame
   const domElements = useRef<(HTMLElement | null)[]>([]);
 
+  const [isMobile, setIsMobile] = React.useState(false);
+
   useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    
     // Almacenamos las referencias
     domElements.current = SECTION_IDS.map(id => document.getElementById(id));
 
@@ -86,7 +92,11 @@ function RiverInstances() {
       scrollData.current.y = cy;
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
   useFrame(() => {
@@ -127,7 +137,10 @@ function RiverInstances() {
     let count0 = 0;
     let count1 = 0;
 
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
+    // En móvil limitamos drásticamente el número de partículas para mejor rendimiento
+    const activeParticleCount = isMobile ? 800 : PARTICLE_COUNT;
+
+    for (let i = 0; i < activeParticleCount; i++) {
       const p = particles[i];
 
       // Aplicar velocidad natural + momentum del scroll (que puede ser negativo para retroceder)
@@ -144,34 +157,44 @@ function RiverInstances() {
         p.x = p.baseX;
       }
 
-      // Lógica de Esquive (Dodge) con curvas más pronunciadas
+      // Lógica de movimiento según dispositivo
       if (activeIntensity > 0) {
-        // Aumentamos el espacio libre en el centro para abrir más la vista segura
-        const spaceClearance = 40;
-
         let targetX = p.baseX;
 
-        // Si la partícula iba a caer cerca del centro, la empujamos en una curva hacia afuera
-        if (Math.abs(p.baseX) < spaceClearance) {
-          const pushForce = Math.pow(1 - (Math.abs(p.baseX) / spaceClearance), 2) * 12;
+        if (isMobile) {
+          // En móvil no hay bordes para separar el río.
+          // Le damos continuidad haciendo que todo el río ondule suavemente como una serpiente.
+          const globalWave = Math.sin(p.y * 0.12) * 5;
+          targetX = p.baseX + (globalWave * activeIntensity);
+          
+          // Brillo reducido en móvil para que no tape los textos ya que pasa por detrás
+          p.color.lerpColors(baseColor, glowColor, activeIntensity * 0.5);
+        } else {
+          // Aumentamos el espacio libre en el centro para abrir más la vista segura
+          const spaceClearance = 40;
 
-          // Ondas más pronunciadas en los bordes internos basadas en la posición Y
-          const wave = Math.sin(p.y * 0.15) * 4;
+          // Si la partícula iba a caer cerca del centro, la empujamos en una curva hacia afuera
+          if (Math.abs(p.baseX) < spaceClearance) {
+            const pushForce = Math.pow(1 - (Math.abs(p.baseX) / spaceClearance), 2) * 12;
 
-          targetX = p.baseX >= 0
-            ? spaceClearance + pushForce + wave // Hacia la derecha, con onda
-            : -spaceClearance - pushForce - wave; // Hacia la izquierda, con onda
-        } else if (Math.abs(p.baseX) < spaceClearance + 15) {
-          // Las partículas adyacentes al borde interno también siguen la onda suavemente
-          const wave = Math.sin(p.y * 0.15) * 3;
-          targetX += p.baseX >= 0 ? wave : -wave;
+            // Ondas más pronunciadas en los bordes internos basadas en la posición Y
+            const wave = Math.sin(p.y * 0.15) * 4;
+
+            targetX = p.baseX >= 0
+              ? spaceClearance + pushForce + wave // Hacia la derecha, con onda
+              : -spaceClearance - pushForce - wave; // Hacia la izquierda, con onda
+          } else if (Math.abs(p.baseX) < spaceClearance + 15) {
+            // Las partículas adyacentes al borde interno también siguen la onda suavemente
+            const wave = Math.sin(p.y * 0.15) * 3;
+            targetX += p.baseX >= 0 ? wave : -wave;
+          }
+
+          // Iluminar el río que ahora enmarca el contenido
+          p.color.lerpColors(baseColor, glowColor, activeIntensity * 1.5);
         }
 
         // Aplicamos la interpolación para crear una curva (bezier natural)
         p.x += (targetX - p.x) * 0.05 * activeIntensity;
-
-        // Iluminar el río que ahora enmarca el contenido
-        p.color.lerpColors(baseColor, glowColor, activeIntensity * 1.5);
       } else {
         // Retornar a flujo normal lentamente para hacer la curva de salida fluida
         p.x += (p.baseX - p.x) * 0.02;
